@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="课程表图标">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f6ef7"/>
+      <stop offset="1" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect x="116" y="106" width="280" height="300" rx="38" fill="#fff" opacity=".96"/>
+  <rect x="116" y="106" width="280" height="70" rx="38" fill="#dbe4ff"/>
+  <rect x="116" y="152" width="280" height="24" fill="#dbe4ff"/>
+  <path d="M174 142h32M242 142h32M310 142h32" stroke="#4f6ef7" stroke-width="18" stroke-linecap="round"/>
+  <path d="M174 236h164M174 292h164M174 348h92" stroke="#4f6ef7" stroke-width="22" stroke-linecap="round"/>
+  <path d="M144 226h0M144 282h0M144 338h0" stroke="#a855f7" stroke-width="24" stroke-linecap="round"/>
+</svg>

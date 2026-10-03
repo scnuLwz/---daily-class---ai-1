@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>大数据二班的课表 · 华南师范大学南海校区</title>
+<meta name="description" content="支持周课表、今日安排、空闲时间、请假、便签和校园地图的静态课程表应用。">
+<meta name="theme-color" content="#4f6ef7">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="大数据二班的课表">
+<meta property="og:description" content="整合周课表、今日安排、空闲时间、请假、便签、校园地图和课程冲突检测的课程表 Web 应用。">
+<meta property="og:image" content="https://i.postimg.cc/nh8dWyQN/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="大数据二班的课表分享封面">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="大数据二班的课表">
+<meta name="twitter:description" content="支持 PWA、离线缓存、冲突检测和二维码分享的课程表应用。">
+<meta name="twitter:image" content="https://i.postimg.cc/nh8dWyQN/og-cover.png">
+<meta name="twitter:image:alt" content="大数据二班的课表分享封面">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="offlineBar" class="offlinebar" role="status" aria-live="polite">离线模式 · 正在使用本地缓存</div>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">📚</div>
+      <div>
+        <h1 id="tTitle">大数据二班的课表</h1>
+        <div class="sub" id="tSub"></div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="weeknav">
+      <button id="prevW" title="上一周">‹</button>
+      <div class="wk" id="wkLabel"></div>
+      <button id="nextW" title="下一周">›</button>
+    </div>
+    <button class="iconbtn" id="btnMkp" title="调休上班 · 填写补周几的课（快捷键 M）">🔁</button>
+    <button class="iconbtn" id="btnToday" title="回到本周">🎯</button>
+    <button class="iconbtn" id="btnTheme" title="切换主题" aria-label="切换主题">🌙</button>
+    <button class="iconbtn" id="btnShare" title="分享课表并生成二维码" aria-label="分享课表">🔗</button>
+    <button class="iconbtn" id="btnAdmin" title="管理员模式" aria-label="管理员模式">🛡️</button>
+    <button class="iconbtn" id="btnNotes" title="便签墙">📌<span class="badge" id="noteBadge">0</span></button>
+    <button class="iconbtn" id="btnRemind" title="发送下一节课到本地（桌面通知）">🔔</button>
+  </div>
+
+    <nav class="tabs" role="tablist" aria-label="主要功能">
+    <button class="tab on" id="tab-week" role="tab" data-tab="week" aria-controls="v-week" aria-selected="true" tabindex="0">🗓 周课表</button>
+    <button class="tab" id="tab-today" role="tab" data-tab="today" aria-controls="v-today" aria-selected="false" tabindex="-1">⏰ 今日</button>
+    <button class="tab" id="tab-free" role="tab" data-tab="free" aria-controls="v-free" aria-selected="false" tabindex="-1">⏳ 空闲</button>
+    <button class="tab" id="tab-leave" role="tab" data-tab="leave" aria-controls="v-leave" aria-selected="false" tabindex="-1">🙋 请假</button>
+    <button class="tab" id="tab-notes" role="tab" data-tab="notes" aria-controls="v-notes" aria-selected="false" tabindex="-1">📌 便签墙</button>
+    <button class="tab" id="tab-courses" role="tab" data-tab="courses" aria-controls="v-courses" aria-selected="false" tabindex="-1">📖 课程</button>
+    <button class="tab" id="tab-campus" role="tab" data-tab="campus" aria-controls="v-campus" aria-selected="false" tabindex="-1">🗺 校园</button>
+    <button class="tab" id="tab-settings" role="tab" data-tab="settings" aria-controls="v-settings" aria-selected="false" tabindex="-1">⚙️ 设置</button>
+  </nav>
+
+  <main id="mainContent">
+
+  <!-- ============ 周课表 ============ -->
+  <section id="v-week" role="tabpanel" aria-labelledby="tab-week" tabindex="0">
+    <div class="panel">
+      <div class="gridscroll"><div class="grid" id="grid"></div></div>
+      <div class="legend">
+        <span><i style="background:#ef4444"></i>当前时间</span>
+        <span><i style="background:repeating-linear-gradient(45deg,#fca5a5 0 4px,transparent 4px 8px)"></i>法定假期 · 不上课</span>
+        <button class="btn" id="toggleOff" style="padding:5px 11px;font-size:12px">👁 显示本周停课</button>
+        <button class="btn" id="toggleSec" style="padding:5px 11px;font-size:12px">↕ 折叠空节次</button>
+        <span>💡 点击课程看详情 · 悬停右上角 📌 直接打便签</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 今日 ============ -->
+  <section id="v-today" class="hidden" role="tabpanel" aria-labelledby="tab-today" tabindex="0">
+    <div class="todayhero">
+      <div class="hero">
+        <div class="d1" id="hDate"></div>
+        <div class="d2" id="hWeek"></div>
+        <div class="chips" id="hChips"></div>
+      </div>
+      <div class="nextcard" id="nextCard"></div>
+    </div>
+    <div id="todayList"></div>
+  </section>
+
+  <!-- ============ 空闲 ============ -->
+  <section id="v-free" class="hidden" role="tabpanel" aria-labelledby="tab-free" tabindex="0">
+    <div class="notebar" style="margin-bottom:14px">
+      <div class="weeknav">
+        <button id="prevWF" title="上一周">‹</button>
+        <div class="wk" id="freeWkLabel"></div>
+        <button id="nextWF" title="下一周">›</button>
+      </div>
+      <button class="btn" id="btnFreeToday">🎯 本周</button>
+      <span class="hint" id="freeHint"></span>
+    </div>
+    <div class="freetop" id="freeTop"></div>
+    <div class="fnotice" id="freeNotice"></div>
+    <div class="freegrid" id="freeGrid"></div>
+  </section>
+
+  <!-- ============ 请假 ============ -->
+  <section id="v-leave" class="hidden" role="tabpanel" aria-labelledby="tab-leave" tabindex="0">
+    <div class="setcard" style="margin-bottom:6px">
+      <h4>🙋 选择要请假的时段
+        <span class="hint" id="leaveHint" style="margin-left:auto;font-weight:400"></span></h4>
+      <div class="hint" style="margin-bottom:12px">点一下时段即可标记「已请假」——课表对应那节课会变灰，同时这段时间会算进空闲。这里只是你自己的标记，<b>正式请假仍需到「智慧学工」提交申请</b>。</div>
+      <div id="leavePick"></div>
+    </div>
+
+    <div id="holNext"></div>
+
+    <h3 class="secttl">📖 请假流程指引（按情况对号入座）</h3>
+    <div class="leggrid" id="leaveGuide"></div>
+
+    <div class="lgnote">
+      <h4>⚠️ 注意事项（务必逐条读完）</h4>
+      <ol>
+        <li><b>有课程的请假</b>：请提前 <b>3 个工作日</b>先联系任课老师同意，以任课老师同意的证明联系辅导员（或兼辅）请假。课程开始之后才需要请假的，也请先联系任课老师，获得同意证明后再联系辅导员（或兼辅）请假。<b>课程已经开始、但没有任课老师同意的请假，一律不会再审批。</b></li>
+        <li><b>来不及签假条</b>：可以委托同班同学或班委帮忙向任课老师请假、微信上跟辅导员请假，之后请在 <b>一周之内补齐手续</b>；没有在规定时间内补假条的，视为旷课。</li>
+        <li><b>没有课程的请假</b>（比如周末外出过夜），请联系辅导员（或兼辅）请假。</li>
+      </ol>
+      <ul>
+        <li>不接受「课程进行到一半才告知老师人在路途上」的临时请假。</li>
+        <li>不接受以学生工作为理由的旷课。请提前做好规划、提前请假。</li>
+      </ul>
+      <div class="lgdanger">❗未办理请假手续即外出，或请假未获批准但外出的，一律按 <b>旷课</b> 论，按《华南师范大学学生违纪处分办法》给予处分。</div>
+      <div class="lgsrc">来源：《国际商学院 2026 级本科生请假流程》。以上为要点摘录，具体以辅导员通知与「智慧学工」的实际要求为准。</div>
+    </div>
+
+    <div class="lgnote lgrules" style="margin-top:14px">
+      <h4>🎓 考勤与处分（《学生请假制度》附件）</h4>
+      <ul>
+        <li><b>请假上限</b>：学生请假一律不得超过 <b>6 周</b>，超过 6 周应办理休学手续。</li>
+        <li><b>假条份数</b>：请假条一式一份；如科任老师需保留请假条，则填写时一式 <b>两份</b>。</li>
+        <li><b>证明材料</b>：事假需由家长电话联系辅导员证实；病假需提供医生证明；公假需提供组织单位盖章的证明文件。</li>
+        <li><b>来不及事前填假条</b>：先通过短信或电话联系辅导员和任课老师，事后于 <b>一周内</b> 补写假条；如学生突发患病，请相关班委立即联系辅导员。</li>
+        <li><b>考勤</b>：每周汇总考勤情况由当事同学签名确认；每月旷课同学于年级内通报批评，通报批评超过 3 次（含 3 次）者，记录将记入事实档案。</li>
+      </ul>
+      <div class="lgtable">
+        <div class="lgtrow lghd"><span>一学期内旷课累计</span><span>或擅自离开学校</span><span>处分</span></div>
+        <div class="lgtrow"><span>12 学时</span><span>3 天</span><span class="lvl1">警告</span></div>
+        <div class="lgtrow"><span>24 学时</span><span>7 天</span><span class="lvl2">严重警告</span></div>
+        <div class="lgtrow"><span>36 学时</span><span>10 天</span><span class="lvl3">记过</span></div>
+        <div class="lgtrow"><span>50 学时以上</span><span>两周以上</span><span class="lvl4">退学处理</span></div>
+      </div>
+      <div class="lgsrc">来源：《学生请假制度》附件（随请假流程一并下发）。</div>
+    </div>
+
+    <h3 class="secttl">🗂 我的请假记录</h3>
+    <div id="leaveLog"></div>
+  </section>
+
+  <!-- ============ 便签墙 ============ -->
+  <section id="v-notes" class="hidden" role="tabpanel" aria-labelledby="tab-notes" tabindex="0">
+    <div class="notebar">
+      <button class="btn pri" id="addNote">＋ 新建便签</button>
+      <button class="btn" id="tidyNotes">🧹 自动整理</button>
+      <button class="btn" id="clearNotes">🗑 清空便签</button>
+      <span class="hint" id="noteHint"></span>
+    </div>
+    <div class="board" id="board"></div>
+  </section>
+
+  <!-- ============ 课程 ============ -->
+  <section id="v-courses" class="hidden" role="tabpanel" aria-labelledby="tab-courses" tabindex="0">
+    <div class="notebar">
+      <input type="text" id="cs" placeholder="🔍 搜索课程 / 老师 / 教室…" style="min-width:280px">
+      <button class="btn pri" id="addCourse">＋ 手动加课</button>
+      <span class="hint" id="csHint"></span>
+    </div>
+    <div id="conflictBox" class="conflictbox"></div>
+    <div class="courses" id="courseList"></div>
+    <div id="otherWrap" style="margin-top:22px"></div>
+  </section>
+
+
+  <!-- ============ 校园地图 ============ -->
+  <section id="v-campus" class="hidden" role="tabpanel" aria-labelledby="tab-campus" tabindex="0">
+    <div class="camhero">
+      <div>
+        <h2>🗺 华南师范大学 · 佛山南海校区</h2>
+        <p>广东省佛山市南海区狮山镇（狮山大学城 · 桃园西路）· 邮编 528225<br>
+          校园分三大块：西南教学区、西北运动区、东侧生活区；三面环水，占地 473.23 亩（约 31.5 万平方米）。<br>
+          地图按<b>真实地理形状</b>绘制：楼栋轮廓、水面与道路都是从卫星影像与开放地图数据里提取的真实边界，
+          米制 1:1，左下角有比例尺，可放大到各分区看。
+          地图<b>只画校园界内</b>：校外的建筑与市政道路一律不画，免得和校区混在一起。<br>
+          想找某一类地方？<b>点下方图例</b>就能只看教学 / 运动 / 生活中的一类；直接输教室号（如 教A207）也能定位。</p>
+        <div class="chips" id="camChips"></div>
+      </div>
+      <div class="camstat" id="camStat"></div>
+    </div>
+
+    <div class="camtools">
+      <div class="seg2" id="camScope">
+        <button data-scope="week" class="on">本周</button>
+        <button data-scope="all">全部周次</button>
+      </div>
+      <div class="seg2" id="camZoom">
+        <button data-view="all" class="on">🏞 全景</button>
+        <button data-view="learn">🏫 教学区</button>
+        <button data-view="sport">🏃 运动区</button>
+        <button data-view="life">🛏 生活区</button>
+      </div>
+      <label class="camsearch">
+        <span>🔍</span>
+        <input id="camRoom" placeholder="输入教室号定位，如 教A207 / 商C404">
+      </label>
+      <button class="btn" id="camRoute">🧭 今日路线</button>
+      <button class="btn" id="camMine">✨ 只看我上课的楼</button>
+      <span class="hint" id="camHint"></span>
+    </div>
+
+    <div class="camroutebar" id="camRouteBar" hidden>
+      <label>🏠 我的宿舍 <select id="camDorm"></select></label>
+      <label><input type="checkbox" id="camBack" checked> 下课后回宿舍</label>
+      <span class="itinerary" id="camTripText"></span>
+    </div>
+
+    <div class="camwrap">
+      <div class="cmap" id="campusMap"></div>
+      <aside class="camside" id="camSide"></aside>
+    </div>
+
+    <h3 class="secttl">💡 校园冷知识（学长学姐的吐槽，仅供参考）</h3>
+    <div class="camnotes" id="camNotes"></div>
+    <div class="camsrc">
+      说明：本图为<b>示意地图</b> —— 楼栋轮廓、水面与道路按实测 1:1 绘制，楼名与分区已对照「华师导航」南海校园图逐栋订正；楼栋趣闻来自历年学长学姐的校园攻略与分享，不一定仍然准确。<br>
+      课表数据里，大数据与商业智能概论从第 11 周起授课老师由何佳宁换为王钰秋，教室仍是商 C404。
+    </div>
+  </section>
+  <!-- ============ 设置 ============ -->
+  <section id="v-settings" class="hidden" role="tabpanel" aria-labelledby="tab-settings" tabindex="0">
+    <div class="setgrid">
+      <div class="setcard">
+        <h4>🗓 学期设置</h4>
+        <div class="frow"><label>第一周 · 周一</label><input type="date" id="semStart"></div>
+        <div class="frow"><label>总周数</label><input type="number" id="totWeeks" min="1" max="30" style="width:80px"></div>
+        <div class="hint">周次、单双周、当前周都由这个日期推算。换学期时改这里即可。</div>
+      </div>
+
+      <div class="setcard">
+        <h4>🎖 军训周</h4>
+        <div class="frow">
+          <label>第</label><input type="number" id="milA" min="0" max="30" style="width:70px">
+          <label style="min-width:auto">周 到 第</label><input type="number" id="milB" min="0" max="30" style="width:70px">
+          <label style="min-width:auto">周</label>
+        </div>
+        <div class="hint">这段周次会整周显示为「全天军训」，并且不参与空闲时间统计。两个都填 0 即关闭该标注。</div>
+      </div>
+
+      <div class="setcard">
+        <h4>🔔 上课提醒 · 发送到本地</h4>
+        <div class="hint" style="margin-bottom:10px">
+          到点自动把「下一节课」推到你的电脑上：桌面通知 + 页面提醒条 + 提示音，标签页标题也会显示倒计时。
+          另外可以导出 <b>.ics 日历文件</b>，导入 Windows 日历 / 手机日历后由系统自己推送，关掉网页也照样提醒。
+        </div>
+        <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;cursor:pointer">
+          <input type="checkbox" id="remOn" style="width:auto"><span>上课前自动提醒我</span>
+        </label>
+        <div class="frow" style="margin-top:8px">
+          <label>提前</label>
+          <select id="remMin" style="width:96px">
+            <option value="5">5 分钟</option><option value="10">10 分钟</option>
+            <option value="15">15 分钟</option><option value="20">20 分钟</option>
+            <option value="30">30 分钟</option>
+          </select>
+        </div>
+        <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;margin-top:6px;cursor:pointer">
+          <input type="checkbox" id="remDesk" style="width:auto"><span>发系统桌面通知（Windows 通知中心）</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;margin-top:6px;cursor:pointer">
+          <input type="checkbox" id="remSound" style="width:auto"><span>提醒时响一声</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;margin-top:6px;cursor:pointer">
+          <input type="checkbox" id="remTitle" style="width:auto"><span>标签页标题显示下课倒计时</span>
+        </label>
+        <div class="remact">
+          <button class="p" id="remTest">🔔 立即测试一次</button>
+          <button id="remIcs">📅 导出日历 .ics</button>
+        </div>
+        <div class="hint" id="remHint" style="margin-top:8px"></div>
+      </div>
+
+      <div class="setcard">
+        <h4>🎌 法定节假日</h4>
+        <div class="hint" style="margin-bottom:8px">
+          默认依据《国务院办公厅关于 2026 年部分节假日安排的通知》。假期当天在周课表会整列标出「不上课」并灰化课程，
+          「空闲」统计也会把假期整天剔除；「下一节课」会自动跳过假期。
+        </div>
+        <div id="holRows"></div>
+        <div class="holadd">
+          <button class="btn" id="holAdd">＋ 添加假期</button>
+          <button class="btn" id="holReset">↺ 恢复官方默认</button>
+        </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)">
+          <div style="font-size:12.5px;font-weight:800;margin-bottom:6px">🔁 调休上班日 · 这一天补周几的课</div>
+          <div class="hint" style="margin-bottom:8px">
+            国办常把周末拉来上班／上课。给每个调休日指定「补周几」之后，周课表那天会直接显示被补那天的课，
+            空闲统计和「下一节课」也跟着走。最快的方式：回周课表点表头上的橙色「调休」角标，或直接按 <kbd>M</kbd>。
+          </div>
+          <div id="mkpRows"></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;margin-top:12px;cursor:pointer">
+          <input type="checkbox" id="mkpWork" style="width:auto">
+          <span>没指定「补周几」的调休日，仍按当天（原周几）的课表上课</span>
+        </label>
+        <div class="hint" style="margin-top:6px" id="mkpHint"></div>
+      </div>
+
+      <div class="setcard">
+        <h4>⏱ 作息时间</h4>
+        <div class="hint" style="margin-bottom:8px">以下为<b>南海校区</b>作息（每节 40 分钟；上午第 2 个课间 10:00–10:20 为 20 分钟，其余课间 10 分钟）。可直接改，改完自动保存。</div>
+        <div style="max-height:290px;overflow:auto">
+          <table class="slots"><thead><tr><th>节</th><th>开始</th><th>结束</th><th>时段</th></tr></thead>
+          <tbody id="slotBody"></tbody></table>
+        </div>
+      </div>
+
+      <div class="setcard">
+        <h4>🔄 更新课表</h4>
+        <div class="hint">
+          更新 <code>schedule.js</code> 或 <code>schedule.json</code> 后，可点击下方按钮重新加载。<br>
+          也可以直接导入自己的 JSON 备份：
+        </div>
+        <div class="frow" style="margin-top:10px">
+          <button class="btn" id="btnReload">⬇ 读取 schedule.json</button>
+          <button class="btn" id="btnImport">📂 导入 JSON</button>
+          <button class="btn" id="btnExport">💾 导出备份</button>
+        </div>
+        <input type="file" id="fileJson" accept=".json" class="hidden">
+      </div>
+
+      <div class="setcard">
+        <h4>🛡️ 管理员模式</h4>
+        <div class="hint">管理员可查看脱敏个人信息、集中更新便签，并管理全部便签。初始账号为 <b>admin</b>，初始密码为 <b>123456</b>。</div>
+        <div class="frow" style="margin-top:10px">
+          <button class="btn" id="btnAdminSettings">进入管理员模式</button>
+        </div>
+      </div>
+
+      <div class="setcard">
+        <h4>⚠️ 危险操作</h4>
+        <div class="hint">重置会清除本地保存的便签、备注与设置，恢复为课表原始数据。</div>
+        <div class="frow" style="margin-top:10px">
+          <button class="btn danger" id="btnReset">恢复默认</button>
+        </div>
+      </div>
+
+      <div class="setcard" style="grid-column:1/-1">
+        <h4>ℹ️ 数据来源</h4>
+        <div class="kv" id="srcInfo"></div>
+      </div>
+    </div>
+  </section>
+  </main>
+</div>
+
+<div class="mask" id="mask"></div>
+<aside class="drawer" id="drawer">
+  <div class="dhead">
+    <div class="swatch" id="dSwatch"></div>
+    <div style="flex:1">
+      <h3 id="dName"></h3>
+      <p id="dSub"></p>
+    </div>
+    <button class="dclose" id="dClose">✕</button>
+  </div>
+  <div class="dbody" id="dBody"></div>
+</aside>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<script src="schedule-core.js"></script>
+<script src="qrcode.min.js"></script>
+<script src="schedule.js"></script>
+<script src="app.js"></script>
+  <div class="rembar" id="remBar"></div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

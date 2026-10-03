@@ -1,0 +1,9 @@
+{
+  "name": "class-schedule-optimized",
+  "version": "1.3.0",
+  "private": true,
+  "description": "静态课程表应用：课表、今日、空闲、请假、便签、校园地图、PWA 和冲突检测。",
+  "scripts": {
+    "test": "node --test tests/schedule-core.test.cjs tests/project.test.cjs"
+  }
+}
