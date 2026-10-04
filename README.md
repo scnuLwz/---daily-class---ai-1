@@ -132,6 +132,7 @@ class-schedule-optimized/
 公开预览地址：
 
 - 嵌入式预览：https://codesandbox.io/embed/5zzytq?view=preview&hidenavigation=1&theme=light
+- pdf插入版本：https://bigdata-class-schedule.app.workbuddy.host/
 - 全屏预览：https://5zzytq.csb.app/
 
 全屏预览首次打开时，CodeSandbox 可能显示一次确认提示，点击“Yes, proceed to preview”即可进入。
